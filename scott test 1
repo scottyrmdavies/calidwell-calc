@@ -1,0 +1,578 @@
+echo "# calidwell-calc" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/scottyrmdavies/calidwell-calc.git
+git push -u origin main
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Quantity Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        label {
+            font-weight: 500;
+            color: #374151;
+        }
+        input[type="number"], .input-display {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 12px;
+            width: 100%;
+            background-color: #f9fafb;
+            color: #1f2937;
+            transition: border-color 0.2s;
+        }
+        /* Specific styling for number inputs to prevent spinner overlap */
+        input[type="number"] {
+            -moz-appearance: textfield; /* Firefox */
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none; /* Chrome, Safari, Edge */
+            margin: 0; /* Remove default margin */
+        }
+        /* Add padding to the right to prevent text from going under spinner */
+        .length-input, .height-input {
+            padding-right: 2.5rem; /* Sufficient space for spinner buttons */
+        }
+
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .input-display {
+            background-color: #e5e7eb;
+            cursor: default;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: #ffffff;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px; /* Space between rows */
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #e0e7ff;
+            color: #374151;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+        th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+        tbody tr {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        tbody tr td:first-child { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+        tbody tr td:last-child { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+        .total-row td {
+            font-weight: 700;
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+        .final-total-row td {
+            font-weight: 700;
+            background-color: #dbeafe;
+            color: #1c4e80;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .grid-cols-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        /* Highlight style for active ratio input */
+        .highlight-input {
+            border-color: #22c55e; /* Green border */
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25); /* Green shadow */
+        }
+        /* Mobile specific adjustments for table cells */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr {
+                margin-bottom: 15px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+            td {
+                border: none;
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-right: 15px; /* Adjust padding for better look */
+            }
+            td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                width: 45%;
+                padding-left: 15px;
+                font-weight: 600;
+                text-align: left;
+                color: #4b5563;
+            }
+            td:first-child { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+            td:last-child { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+            .btn-danger {
+                width: auto;
+                margin-left: auto;
+                padding: 8px 12px; /* Smaller padding for icon button on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold">Material Quantity Calculator</h1>
+
+        <!-- Calculation Type Selection -->
+        <div class="mb-8 p-6 bg-blue-100 rounded-lg shadow-inner flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+            <h2 class="text-xl font-semibold text-blue-900 mb-0">Calculate for:</h2>
+            <div class="flex space-x-4">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="calculationType" value="bricks" checked class="form-radio text-blue-600 h-5 w-5" onchange="updateDefaultRatios(); calculateAll();">
+                    <span class="ml-2 text-gray-800 font-medium">Bricks</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="calculationType" value="blocks" class="form-radio text-blue-600 h-5 w-5" onchange="updateDefaultRatios(); calculateAll();">
+                    <span class="ml-2 text-gray-800 font-medium">Blocks</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Material Ratios Section -->
+        <div class="mb-8 p-6 bg-blue-50 rounded-lg shadow-inner">
+            <h2 class="section-title text-blue-800">Material Ratios (per square meter)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label for="sandRatio" class="block text-sm font-medium text-gray-700 mb-1">Sand (kg/m²)</label>
+                    <input type="number" id="sandRatio" value="29.3" step="0.1" class="input-field">
+                </div>
+                <div>
+                    <label for="cementRatio" class="block text-sm font-medium text-gray-700 mb-1">Cement (kg/m²)</label>
+                    <input type="number" id="cementRatio" value="7.2" step="0.1" class="input-field">
+                </div>
+                <div>
+                    <label for="bricksRatio" class="block text-sm font-medium text-gray-700 mb-1">Bricks (units/m²)</label>
+                    <input type="number" id="bricksRatio" value="60" step="1" class="input-field">
+                </div>
+                <div>
+                    <label for="blocksRatio" class="block text-sm font-medium text-gray-700 mb-1">Blocks (units/m²)</label>
+                    <input type="number" id="blocksRatio" value="10" step="1" class="input-field"> <!-- Default for 440x215mm blocks -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Brickwork Sections Table -->
+        <h2 class="section-title">Wall Sections</h2>
+        <div class="overflow-x-auto mb-6">
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th>Section</th>
+                        <th>Length (m)</th>
+                        <th>Height (m)</th>
+                        <th>Meters²</th>
+                        <th>Sand (kg)</th>
+                        <th>Cement (kg)</th>
+                        <th>Quantity (Units)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="brickworkTableBody">
+                    <!-- Initial rows will be added by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <button id="addRowBtn" class="btn btn-primary mb-8 ml-2">Add Wall Section</button>
+
+        <!-- Totals Section -->
+        <div class="mb-8 p-6 bg-green-50 rounded-lg shadow-inner">
+            <h2 class="section-title text-green-800">Totals (Before Openings Deduction)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Meters²</label>
+                    <div id="totalMeters2" class="input-display">0.00</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Sand (kg)</label>
+                    <div id="totalSand" class="input-display">0.00</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Cement (kg)</label>
+                    <div id="totalCement" class="input-display">0.00</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Quantity (Units)</label>
+                    <div id="totalQuantity" class="input-display">0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deduct Openings & Final Calculation Section -->
+        <div class="mb-8 p-6 bg-red-50 rounded-lg shadow-inner">
+            <h2 class="section-title text-red-800">Deduct Openings & Final Calculation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="md:col-span-2">
+                    <label for="deductOpeningsArea" class="block text-sm font-medium text-gray-700 mb-1">Deduction Area for Openings (m²)</label>
+                    <input type="number" id="deductOpeningsArea" value="0" step="0.1" class="input-field">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Final Units</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">Units</label>
+                            <div id="finalTotalUnits" class="input-display">0</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1" id="finalUnitsPalletsLabel">Pallets</label>
+                            <div id="finalUnitsPallets" class="input-display">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Final Sand</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">KG</label>
+                            <div id="finalTotalSand" class="input-display">0</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">Bulk Bags</label>
+                            <div id="finalBulkBags" class="input-display">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Final Cement</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">KG</label>
+                            <div id="finalTotalCement" class="input-display">0</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">Bags</label>
+                            <div id="finalCementBags" class="input-display">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Insulation Needed</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">M²</label>
+                            <div id="finalInsulationM2" class="input-display">0.00</div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">Packs</label>
+                            <div id="finalInsulationPacks" class="input-display">0</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wall Ties Needed</label>
+                    <div id="finalWallTies" class="input-display">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-center">
+            <button id="calculateBtn" class="btn btn-secondary w-full md:w-auto">Calculate All Quantities</button>
+        </div>
+    </div>
+
+    <script>
+        // Global counter for wall sections
+        let sectionCounter = 0;
+
+        // Function to create a new wall section row
+        function createWallRow(sectionName, length = 0, height = 0) {
+            sectionCounter++;
+            const rowId = `row-${sectionCounter}`;
+            const tableBody = document.getElementById('brickworkTableBody'); // Reusing ID for now
+
+            const row = document.createElement('tr');
+            row.id = rowId;
+            row.innerHTML = `
+                <td data-label="Section">Wall ${sectionCounter}</td>
+                <td data-label="Length (m)"><input type="number" value="${length}" step="0.1" class="length-input w-full rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
+                <td data-label="Height (m)"><input type="number" value="${height}" step="0.1" class="height-input w-full rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"></td>
+                <td data-label="Meters²" class="meters2-display input-display">0.0</td>
+                <td data-label="Sand (kg)" class="sand-display input-display">0.0</td>
+                <td data-label="Cement (kg)" class="cement-display input-display">0.0</td>
+                <td data-label="Quantity (Units)" class="quantity-display input-display">0.0</td>
+                <td data-label="Actions"><button class="btn btn-danger remove-row-btn"><i class="fas fa-trash-alt"></i></button></td>
+            `;
+            tableBody.appendChild(row);
+
+            // Add event listeners for inputs in the new row
+            row.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', calculateAll);
+            });
+
+            // Add event listener for remove button
+            row.querySelector('.remove-row-btn').addEventListener('click', function() {
+                row.remove();
+                calculateAll(); // Recalculate totals after removing a row
+            });
+        }
+
+        // Function to update default sand and cement ratios and highlight active ratio input
+        function updateDefaultRatios() {
+            const calculationType = document.querySelector('input[name="calculationType"]:checked').value;
+            const sandRatioInput = document.getElementById('sandRatio');
+            const cementRatioInput = document.getElementById('cementRatio');
+            const bricksRatioInput = document.getElementById('bricksRatio');
+            const blocksRatioInput = document.getElementById('blocksRatio');
+
+            // Remove highlight from both ratio inputs first
+            bricksRatioInput.classList.remove('highlight-input');
+            blocksRatioInput.classList.remove('highlight-input');
+
+            if (calculationType === 'bricks') {
+                sandRatioInput.value = '29.3';
+                cementRatioInput.value = '7.2';
+                bricksRatioInput.classList.add('highlight-input');
+            } else { // blocks
+                sandRatioInput.value = '17.6';
+                cementRatioInput.value = '4.3';
+                blocksRatioInput.classList.add('highlight-input');
+            }
+        }
+
+        // Function to calculate quantities for a single row
+        function calculateRow(row) {
+            const length = parseFloat(row.querySelector('.length-input').value) || 0;
+            const height = parseFloat(row.querySelector('.height-input').value) || 0;
+
+            const sandRatio = parseFloat(document.getElementById('sandRatio').value) || 0;
+            const cementRatio = parseFloat(document.getElementById('cementRatio').value) || 0;
+            const bricksRatio = parseFloat(document.getElementById('bricksRatio').value) || 0;
+            const blocksRatio = parseFloat(document.getElementById('blocksRatio').value) || 0;
+
+            const calculationType = document.querySelector('input[name="calculationType"]:checked').value;
+
+            let meters2 = (length * height);
+            if (meters2 < 0) meters2 = 0;
+
+            const sandKg = meters2 * sandRatio;
+            const cementKg = meters2 * cementRatio;
+            let quantityUnits;
+
+            if (calculationType === 'bricks') {
+                quantityUnits = meters2 * bricksRatio;
+            } else { // blocks
+                quantityUnits = meters2 * blocksRatio;
+            }
+
+            row.querySelector('.meters2-display').textContent = meters2.toFixed(1);
+            row.querySelector('.sand-display').textContent = sandKg.toFixed(1);
+            row.querySelector('.cement-display').textContent = cementKg.toFixed(1);
+            row.querySelector('.quantity-display').textContent = quantityUnits.toFixed(1);
+
+            return { meters2, sandKg, cementKg, quantityUnits };
+        }
+
+        // Function to calculate all quantities and update totals
+        function calculateAll() {
+            let totalMeters2 = 0;
+            let totalSand = 0;
+            let totalCement = 0;
+            let totalQuantityUnits = 0; // Renamed from totalQuantity
+
+            // Update label for Pallets/Packs based on selection
+            const calculationType = document.querySelector('input[name="calculationType"]:checked').value;
+            const finalUnitsPalletsLabel = document.getElementById('finalUnitsPalletsLabel');
+            if (calculationType === 'bricks') {
+                finalUnitsPalletsLabel.textContent = 'Pallets';
+            } else {
+                finalUnitsPalletsLabel.textContent = 'Packs'; // Assuming blocks come in packs for rounding
+            }
+
+
+            // Calculate for each wall section row
+            const wallRows = document.querySelectorAll('#brickworkTableBody tr');
+            wallRows.forEach(row => {
+                const { meters2, sandKg, cementKg, quantityUnits } = calculateRow(row);
+                totalMeters2 += meters2;
+                totalSand += sandKg;
+                totalCement += cementKg;
+                totalQuantityUnits += quantityUnits;
+            });
+
+            // Update total displays (before openings deduction)
+            document.getElementById('totalMeters2').textContent = totalMeters2.toFixed(2);
+            document.getElementById('totalSand').textContent = totalSand.toFixed(3);
+            document.getElementById('totalCement').textContent = totalCement.toFixed(3);
+            document.getElementById('totalQuantity').textContent = totalQuantityUnits.toFixed(2); // Use totalQuantityUnits
+
+            // Apply deduction for openings
+            const deductOpeningsArea = parseFloat(document.getElementById('deductOpeningsArea').value) || 0;
+            let adjustedMeters2 = totalMeters2 - deductOpeningsArea;
+            if (adjustedMeters2 < 0) adjustedMeters2 = 0;
+
+            const sandRatio = parseFloat(document.getElementById('sandRatio').value) || 0;
+            const cementRatio = parseFloat(document.getElementById('cementRatio').value) || 0;
+            const bricksRatio = parseFloat(document.getElementById('bricksRatio').value) || 0;
+            const blocksRatio = parseFloat(document.getElementById('blocksRatio').value) || 0;
+
+
+            let finalTotalUnits;
+            let finalUnitsPallets; // This will be pallets for bricks, packs for blocks
+
+            if (calculationType === 'bricks') {
+                finalTotalUnits = adjustedMeters2 * bricksRatio;
+                finalUnitsPallets = finalTotalUnits / 500; // Bricks divided by 500
+            } else { // blocks
+                finalTotalUnits = adjustedMeters2 * blocksRatio;
+                finalUnitsPallets = finalTotalUnits / 90; // Assuming 90 blocks per pack for calculation
+            }
+
+            const finalTotalSand = adjustedMeters2 * sandRatio;
+            const finalTotalCement = adjustedMeters2 * cementRatio;
+
+            // New calculations for insulation and wall ties
+            const finalInsulationM2 = adjustedMeters2;
+            const finalWallTies = adjustedMeters2 * 5;
+
+            // Calculate Bulk Bags for Sand (1 bulk bag = 600 kg)
+            const finalBulkBags = finalTotalSand / 600;
+
+            // Calculate Bags for Cement
+            const finalCementBags = finalTotalCement / 25;
+
+            // Calculate Packs for Insulation
+            const finalInsulationPacks = finalInsulationM2 / (0.54 * 4);
+
+            // Rounding up all final quantities
+            document.getElementById('finalTotalUnits').textContent = Math.ceil(finalTotalUnits).toFixed(0);
+            document.getElementById('finalUnitsPallets').textContent = Math.ceil(finalUnitsPallets).toFixed(0);
+            document.getElementById('finalTotalSand').textContent = Math.ceil(finalTotalSand).toFixed(0);
+            document.getElementById('finalBulkBags').textContent = Math.ceil(finalBulkBags).toFixed(0);
+            document.getElementById('finalTotalCement').textContent = Math.ceil(finalTotalCement).toFixed(0);
+            document.getElementById('finalCementBags').textContent = Math.ceil(finalCementBags).toFixed(0);
+            document.getElementById('finalInsulationM2').textContent = finalInsulationM2.toFixed(2);
+            document.getElementById('finalInsulationPacks').textContent = Math.ceil(finalInsulationPacks).toFixed(0);
+            document.getElementById('finalWallTies').textContent = Math.ceil(finalWallTies).toFixed(0);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add initial rows
+            createWallRow('Wall Section 1', 4, 3.4);
+            createWallRow('Wall Section 2', 8.65, 3.4);
+            createWallRow('Wall Section 3', 4, 3.4);
+
+            document.getElementById('addRowBtn').addEventListener('click', () => createWallRow());
+            document.getElementById('calculateBtn').addEventListener('click', calculateAll);
+
+            // Add event listeners for ratio inputs
+            document.getElementById('sandRatio').addEventListener('input', calculateAll);
+            document.getElementById('cementRatio').addEventListener('input', calculateAll);
+            document.getElementById('bricksRatio').addEventListener('input', calculateAll);
+            document.getElementById('blocksRatio').addEventListener('input', calculateAll);
+
+            // Add event listener for deduction area input
+            document.getElementById('deductOpeningsArea').addEventListener('input', calculateAll);
+
+            // Set initial default ratios and perform calculation on load
+            updateDefaultRatios();
+            calculateAll();
+        });
+    </script>
+</body>
+</html>
